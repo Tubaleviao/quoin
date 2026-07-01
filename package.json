@@ -1,0 +1,23 @@
+{
+  "name": "quoin",
+  "version": "0.0.1",
+  "description": "Typescript library to help you define your application's meaning, behavior, entities and state machine",
+  "keywords": [
+    "quoin"
+  ],
+  "homepage": "https://github.com/Tubaleviao/quoin#readme",
+  "bugs": {
+    "url": "https://github.com/Tubaleviao/quoin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Tubaleviao/quoin.git"
+  },
+  "license": "MIT",
+  "author": "Tubaleviao",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
