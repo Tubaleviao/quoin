@@ -1,10 +1,10 @@
-// @ts-check
-/** @type {import('@quoin/core').EntityInput} */
-module.exports = {
+const { defineEntity } = require('@quoin/core')
+
+module.exports = defineEntity({
   description: 'A registered library member',
   goal: 'Track member identity and borrowing eligibility',
   fields: {
-    id:                  { type: 'uuid',  primaryKey: true },
+    id:                  { type: 'uuid',   primaryKey: true },
     name:                { type: 'string', pii: true, gdpr: { category: 'identity' } },
     email:               { type: 'email',  pii: true, gdpr: { category: 'contact', retention: '3y', legalBasis: 'contract' } },
     status:              { type: 'enum',   values: ['active', 'suspended'] },
@@ -22,4 +22,4 @@ module.exports = {
       { from: 'suspended', to: 'active',    trigger: 'reinstate', guard: 'Only a librarian may reinstate a member' },
     ],
   },
-}
+})

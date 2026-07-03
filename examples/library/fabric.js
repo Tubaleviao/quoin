@@ -1,9 +1,6 @@
-// @ts-check
-// Assemble the schema from individual entity files.
-// Each entity lives in its own file — organize however suits your project.
+const { defineFabric } = require('@quoin/core')
 
-/** @type {import('@quoin/core').FabricInput} */
-module.exports = {
+module.exports = defineFabric({
   meta: {
     name: 'LibrarySystem',
     description: 'Library book lending system',
@@ -19,4 +16,4 @@ module.exports = {
   apis: {
     LibraryAPI: require('./apis/LibraryAPI'),
   },
-}
+})

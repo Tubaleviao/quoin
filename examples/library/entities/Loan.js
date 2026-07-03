@@ -1,6 +1,6 @@
-// @ts-check
-/** @type {import('@quoin/core').EntityInput} */
-module.exports = {
+const { defineEntity } = require('@quoin/core')
+
+module.exports = defineEntity({
   description: 'A record of a book being borrowed by a member',
   goal: 'Track the full lifecycle of a lending transaction',
   fields: {
@@ -15,4 +15,4 @@ module.exports = {
     book:   { name: 'book',   kind: 'belongsTo', target: 'Book',   foreignKey: 'bookId' },
     member: { name: 'member', kind: 'belongsTo', target: 'Member', foreignKey: 'memberId' },
   },
-}
+})
