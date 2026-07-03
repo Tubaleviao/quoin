@@ -5,6 +5,7 @@ import { inspectCommand } from './commands/inspect'
 import { generateCommand } from './commands/generate'
 import { checkDriftCommand } from './commands/check-drift'
 import { initCommand } from './commands/init'
+import { diffCommand } from './commands/diff'
 
 const program = new Command()
 
@@ -35,7 +36,14 @@ program
   .command('generate')
   .description('Run all generators in dependency order')
   .option('-c, --config <path>', 'path to quoin.config.ts', './quoin.config.ts')
-  .action((opts: { config: string }) => generateCommand(opts.config))
+  .option('-w, --watch', 'watch for changes and re-generate automatically', false)
+  .action((opts: { config: string; watch: boolean }) => generateCommand(opts.config, { watch: opts.watch }))
+
+program
+  .command('diff')
+  .description('Show what files would change if generate ran now')
+  .option('-c, --config <path>', 'path to quoin.config.ts', './quoin.config.ts')
+  .action((opts: { config: string }) => diffCommand(opts.config))
 
 program
   .command('check-drift')
