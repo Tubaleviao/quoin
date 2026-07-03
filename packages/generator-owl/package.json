@@ -1,0 +1,18 @@
+{
+  "name": "@quoin/generator-owl",
+  "version": "0.0.1",
+  "description": "OWL ontology generator for quoin (extends RDF output)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@quoin/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

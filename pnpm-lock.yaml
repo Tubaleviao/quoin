@@ -32,9 +32,18 @@ importers:
       '@quoin/generator-docs':
         specifier: workspace:*
         version: link:../../packages/generator-docs
+      '@quoin/generator-jsonschema':
+        specifier: workspace:*
+        version: link:../../packages/generator-jsonschema
       '@quoin/generator-openapi':
         specifier: workspace:*
         version: link:../../packages/generator-openapi
+      '@quoin/generator-owl':
+        specifier: workspace:*
+        version: link:../../packages/generator-owl
+      '@quoin/generator-rdf':
+        specifier: workspace:*
+        version: link:../../packages/generator-rdf
       '@quoin/generator-sql':
         specifier: workspace:*
         version: link:../../packages/generator-sql
@@ -80,7 +89,46 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
+  packages/generator-jsonschema:
+    dependencies:
+      '@quoin/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
   packages/generator-openapi:
+    dependencies:
+      '@quoin/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/generator-owl:
+    dependencies:
+      '@quoin/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+
+  packages/generator-rdf:
     dependencies:
       '@quoin/core':
         specifier: workspace:*

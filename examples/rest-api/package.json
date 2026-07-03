@@ -13,6 +13,9 @@
     "@quoin/generator-typescript": "workspace:*",
     "@quoin/generator-openapi": "workspace:*",
     "@quoin/generator-sql": "workspace:*",
-    "@quoin/generator-docs": "workspace:*"
+    "@quoin/generator-docs": "workspace:*",
+    "@quoin/generator-jsonschema": "workspace:*",
+    "@quoin/generator-rdf": "workspace:*",
+    "@quoin/generator-owl": "workspace:*"
   }
 }
