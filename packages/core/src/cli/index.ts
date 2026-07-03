@@ -4,6 +4,7 @@ import { validateCommand } from './commands/validate'
 import { inspectCommand } from './commands/inspect'
 import { generateCommand } from './commands/generate'
 import { checkDriftCommand } from './commands/check-drift'
+import { initCommand } from './commands/init'
 
 const program = new Command()
 
@@ -11,6 +12,12 @@ program
   .name('quoin')
   .description('Generate all application artifacts from a single fabric.ts source of truth')
   .version('0.0.1')
+
+program
+  .command('init')
+  .description('Scaffold a new quoin project with a starter fabric.ts and quoin.config.ts')
+  .option('-d, --dir <path>', 'target directory', '.')
+  .action((opts: { dir: string }) => initCommand(opts.dir))
 
 program
   .command('validate')
