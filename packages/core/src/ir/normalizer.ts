@@ -19,8 +19,7 @@ import type {
   ApiInput,
   EndpointInput,
 } from './input-types'
-
-const CURRENT_IR_VERSION = '1.0.0'
+import { CURRENT_IR_VERSION } from './version'
 
 function normalizeField(name: string, raw: FieldInput): FieldSchema {
   if (!raw.type) throw new Error(`Field "${name}" is missing required property "type"`)

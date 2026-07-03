@@ -1,8 +1,7 @@
 import type { FabricSchema, SchemaMeta, EntitySchema, ApiSchema } from '../ir/types'
+import { CURRENT_IR_VERSION } from '../ir/version'
 import { EntityBuilder } from './entity'
 import { ApiBuilder } from './api'
-
-const CURRENT_IR_VERSION = '1.0.0'
 
 class MetaBuilder {
   private _meta: SchemaMeta = { name: 'unnamed' }
