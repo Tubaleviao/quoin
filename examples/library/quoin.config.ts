@@ -4,6 +4,7 @@ import { OpenApiGenerator } from '@quoin/generator-openapi'
 import { SqlGenerator } from '@quoin/generator-sql'
 import { DocsGenerator } from '@quoin/generator-docs'
 import { UiGenerator } from '@quoin/generator-ui'
+import { ExpressGenerator } from '@quoin/generator-express'
 
 export default defineConfig({
   schema: './src/fabric.ts',
@@ -15,5 +16,6 @@ export default defineConfig({
     new SqlGenerator(),
     new DocsGenerator(),
     new UiGenerator(),
+    new ExpressGenerator(),
   ],
 })

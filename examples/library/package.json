@@ -16,6 +16,7 @@
     "@quoin/generator-openapi": "workspace:*",
     "@quoin/generator-sql": "workspace:*",
     "@quoin/generator-docs": "workspace:*",
-    "@quoin/generator-ui": "workspace:*"
+    "@quoin/generator-ui": "workspace:*",
+    "@quoin/generator-express": "workspace:*"
   }
 }
