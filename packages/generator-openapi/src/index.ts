@@ -248,7 +248,8 @@ function buildOperationId(method: string, path: string): string {
         const name = p.slice(1, -1)
         return 'By' + name.charAt(0).toUpperCase() + name.slice(1)
       }
-      return p.charAt(0).toUpperCase() + p.slice(1)
+      // camelCase kebab-cased segments (e.g. "return-book" → "ReturnBook")
+      return p.split('-').map(seg => seg.charAt(0).toUpperCase() + seg.slice(1)).join('')
     })
   return method + parts.join('')
 }
@@ -280,6 +281,67 @@ function groupByPath(api: ApiSchema): Map<string, PathEntry[]> {
   return map
 }
 
+// --- Auto-generated transition endpoints ---
+
+function toKebab(s: string): string {
+  return s.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`).replace(/^-/, '')
+}
+
+function toPlural(name: string): string {
+  if (name.endsWith('y') && !/[aeiou]y$/.test(name)) {
+    return name.slice(0, -1) + 'ies'
+  }
+  if (name.endsWith('s') || name.endsWith('sh') || name.endsWith('ch') || name.endsWith('x') || name.endsWith('z')) {
+    return name + 'es'
+  }
+  return name + 's'
+}
+
+interface SyntheticEndpointEntry {
+  oaPath: string
+  endpoint: EndpointSchema
+  key: string
+}
+
+function buildSyntheticTransitionEndpoints(schema: FabricSchema): SyntheticEndpointEntry[] {
+  // Collect all behavior refs already declared in explicit APIs
+  const coveredBehaviors = new Set<string>()
+  for (const api of Object.values(schema.apis)) {
+    for (const endpoint of Object.values(api.endpoints)) {
+      if (endpoint.behavior) coveredBehaviors.add(endpoint.behavior)
+    }
+  }
+
+  const entries: SyntheticEndpointEntry[] = []
+
+  for (const entity of Object.values(schema.entities)) {
+    if (!entity.stateMachine) continue
+    const seenTriggers = new Set<string>()
+
+    for (const transition of entity.stateMachine.transitions) {
+      const trigger = transition.trigger
+      if (seenTriggers.has(trigger)) continue
+      seenTriggers.add(trigger)
+
+      const behaviorRef = `${entity.name}.${trigger}`
+      if (coveredBehaviors.has(behaviorRef)) continue
+
+      const behavior = entity.behaviors[trigger]
+      const resourcePath = `/${toPlural(toKebab(entity.name))}/{id}/${toKebab(trigger)}`
+      const endpoint: EndpointSchema = {
+        method: 'POST',
+        path: resourcePath,
+        description: behavior?.description ?? `Trigger ${trigger} on ${entity.name}`,
+        behavior: behaviorRef,
+        auth: behavior?.auth,
+      }
+      entries.push({ oaPath: resourcePath, endpoint, key: `POST ${resourcePath}` })
+    }
+  }
+
+  return entries
+}
+
 // --- Full document ---
 
 function generateOpenApiDoc(schema: FabricSchema): string {
@@ -291,7 +353,7 @@ function generateOpenApiDoc(schema: FabricSchema): string {
   if (schema.meta.description) lines.push(`  description: ${yamlStr(schema.meta.description)}`)
   lines.push(`  version: ${yamlStr(schema.meta.version ?? '1.0.0')}`)
 
-  // Collect all input schemas needed
+  // Collect all input schemas needed (explicit APIs + synthetics)
   const inputSchemas: Array<{ name: string; input: Record<string, FieldSchema> }> = []
   for (const entity of Object.values(schema.entities)) {
     for (const [, behavior] of Object.entries(entity.behaviors)) {
@@ -300,6 +362,8 @@ function generateOpenApiDoc(schema: FabricSchema): string {
       }
     }
   }
+
+  const syntheticEntries = buildSyntheticTransitionEndpoints(schema)
 
   // paths
   lines.push('')
@@ -312,6 +376,19 @@ function generateOpenApiDoc(schema: FabricSchema): string {
       for (const { key, endpoint } of entries) {
         lines.push(renderEndpoint(key, endpoint, schema, 2, oaPath))
       }
+    }
+  }
+
+  // Group synthetic endpoints by path
+  const byPath = new Map<string, SyntheticEndpointEntry[]>()
+  for (const entry of syntheticEntries) {
+    if (!byPath.has(entry.oaPath)) byPath.set(entry.oaPath, [])
+    byPath.get(entry.oaPath)!.push(entry)
+  }
+  for (const [oaPath, entries] of byPath) {
+    lines.push(`  ${yamlStr(oaPath)}:`)
+    for (const { key, endpoint } of entries) {
+      lines.push(renderEndpoint(key, endpoint, schema, 2, oaPath))
     }
   }
 
@@ -341,7 +418,7 @@ function generateOpenApiDoc(schema: FabricSchema): string {
 
 export class OpenApiGenerator implements Generator {
   readonly name = 'openapi'
-  readonly dependsOn: string[] = []
+  readonly dependsOn: string[] = ['typescript']
 
   async generate(schema: FabricSchema, _ctx: GeneratorContext): Promise<GeneratorOutput> {
     const content = generateOpenApiDoc(schema)

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@quoin/core": "workspace:*",
-    "@quoin/generator-typescript": "workspace:*"
+    "@quoin/generator-typescript": "workspace:*",
+    "@quoin/generator-openapi": "workspace:*"
   }
 }
