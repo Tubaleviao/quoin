@@ -6,6 +6,7 @@ import { DocsGenerator } from '@quoin/generator-docs'
 import { UiGenerator } from '@quoin/generator-ui'
 import { PrismaGenerator } from '@quoin/generator-prisma'
 import { ExpressGenerator } from '@quoin/generator-express'
+import { AppGenerator } from '@quoin/generator-app'
 
 export default defineConfig({
   schema: './src/fabric.ts',
@@ -19,5 +20,6 @@ export default defineConfig({
     new UiGenerator(),
     new PrismaGenerator(),
     new ExpressGenerator({ orm: 'prisma' }),
+    new AppGenerator(),
   ],
 })
