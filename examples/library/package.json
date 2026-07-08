@@ -8,7 +8,9 @@
     "inspect":     "quoin inspect     -s ./src/fabric.ts",
     "generate":    "quoin generate    -c ./quoin.config.ts",
     "diff":        "quoin diff        -c ./quoin.config.ts",
-    "check-drift": "quoin check-drift -c ./quoin.config.ts"
+    "check-drift": "quoin check-drift -c ./quoin.config.ts",
+    "dev":         "tsx watch src/generated/express/server.ts",
+    "start":       "tsx src/generated/express/server.ts"
   },
   "dependencies": {
     "@quoin/core": "workspace:*",
@@ -17,6 +19,13 @@
     "@quoin/generator-sql": "workspace:*",
     "@quoin/generator-docs": "workspace:*",
     "@quoin/generator-ui": "workspace:*",
-    "@quoin/generator-express": "workspace:*"
+    "@quoin/generator-express": "workspace:*",
+    "@quoin/generator-prisma": "workspace:*",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2"
   }
 }

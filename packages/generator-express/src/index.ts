@@ -5,14 +5,9 @@ import type {
   FabricSchema,
   EndpointSchema,
   BehaviorSchema,
-  ApiSchema,
 } from '@quoin/core'
 
 // --- Helpers ---
-
-function lcFirst(s: string): string {
-  return s.charAt(0).toLowerCase() + s.slice(1)
-}
 
 function toKebab(s: string): string {
   return s.replace(/([A-Z])/g, m => `-${m.toLowerCase()}`).replace(/^-/, '')
@@ -96,6 +91,14 @@ function renderAuthMiddleware(roles: string[]): string {
 
 // --- Handler body ---
 
+function lcFirst(s: string): string {
+  return s.charAt(0).toLowerCase() + s.slice(1)
+}
+
+function resolveReturnType(endpoint: EndpointSchema): string | null {
+  return endpoint.returns ?? null
+}
+
 function resolveRequestBody(endpoint: EndpointSchema, schema: FabricSchema): string | null {
   if (!endpoint.behavior) return null
   const [entityName, behaviorName] = endpoint.behavior.split('.')
@@ -107,12 +110,35 @@ function resolveRequestBody(endpoint: EndpointSchema, schema: FabricSchema): str
   return null
 }
 
-function buildHandlerBody(entry: EndpointEntry, schema: FabricSchema): string[] {
+// Derive the entity name the endpoint naturally targets from behavior, returns, or path inference
+function resolveTargetEntity(endpoint: EndpointSchema, entityNames?: string[]): string | null {
+  if (endpoint.behavior) return endpoint.behavior.split('.')[0] ?? null
+  if (endpoint.returns) return endpoint.returns
+  // Infer from the first path segment: /loans/:id → "loans" → match "Loan"
+  if (entityNames && entityNames.length > 0) {
+    const firstSegment = endpoint.path.split('/').find(s => s && !s.startsWith(':'))
+    if (firstSegment) {
+      for (const name of entityNames) {
+        if (
+          toPlural(toKebab(name)) === firstSegment.toLowerCase() ||
+          toKebab(name) === firstSegment.toLowerCase()
+        ) {
+          return name
+        }
+      }
+    }
+  }
+  return null
+}
+
+function buildHandlerBodyPrisma(entry: EndpointEntry, schema: FabricSchema, entityNames: string[]): string[] {
   const lines: string[] = []
   const { method, endpoint } = entry
 
-  // Extract path params
   const pathParams = (entry.fullPath.match(/:[a-zA-Z_]+/g) ?? []).map(p => p.slice(1))
+  const entityName = resolveTargetEntity(endpoint, entityNames)
+  const repoVar = entityName ? `${lcFirst(entityName)}Repository` : null
+
   if (pathParams.length > 0) {
     lines.push(`    const { ${pathParams.join(', ')} } = req.params`)
   }
@@ -125,6 +151,68 @@ function buildHandlerBody(entry: EndpointEntry, schema: FabricSchema): string[] 
 
   // Rules from behavior as comments
   if (endpoint.behavior) {
+    const [eName, bName] = endpoint.behavior.split('.')
+    const entity = eName ? schema.entities[eName] : undefined
+    const behavior: BehaviorSchema | undefined = entity && bName ? entity.behaviors[bName] : undefined
+    if (behavior?.rules && behavior.rules.length > 0) {
+      for (const rule of behavior.rules) {
+        lines.push(`    // Rule: ${rule}`)
+      }
+    }
+  }
+
+  if (!repoVar) {
+    lines.push(`    // TODO: implement`)
+    lines.push(`    res.json({})`)
+    return lines
+  }
+
+  // ORM-backed implementation
+  const [, behaviorName] = (endpoint.behavior ?? '').split('.')
+  const hasId = pathParams.includes('id')
+
+  if (endpoint.behavior && behaviorName) {
+    // Behavior / state-machine endpoint — use the dedicated repository method
+    const callArgs = hasId ? 'id' : hasBody ? 'body' : ''
+    lines.push(`    const result = await ${repoVar}.${behaviorName}(${callArgs})`)
+    lines.push(`    res.json(result)`)
+  } else if (method === 'delete') {
+    lines.push(`    await ${repoVar}.delete(id)`)
+    lines.push(`    res.status(204).send()`)
+  } else if (method === 'get' && hasId) {
+    lines.push(`    const result = await ${repoVar}.findById(id)`)
+    lines.push(`    res.json(result)`)
+  } else if (method === 'get') {
+    lines.push(`    const result = await ${repoVar}.findAll()`)
+    lines.push(`    res.json(result)`)
+  } else if (method === 'put' || method === 'patch') {
+    lines.push(`    const result = await ${repoVar}.update(id, body)`)
+    lines.push(`    res.json(result)`)
+  } else {
+    // POST create
+    lines.push(`    const result = await ${repoVar}.create(body)`)
+    lines.push(`    res.status(201).json(result)`)
+  }
+
+  return lines
+}
+
+function buildHandlerBodyTodo(entry: EndpointEntry, schema: FabricSchema): string[] {
+  const lines: string[] = []
+  const { method, endpoint } = entry
+
+  const pathParams = (entry.fullPath.match(/:[a-zA-Z_]+/g) ?? []).map(p => p.slice(1))
+  if (pathParams.length > 0) {
+    lines.push(`    const { ${pathParams.join(', ')} } = req.params`)
+  }
+
+  const hasBody = resolveRequestBody(endpoint, schema) !== null
+  const isWriteMethod = ['post', 'put', 'patch'].includes(method)
+  if (hasBody && isWriteMethod) {
+    lines.push(`    const body = req.body`)
+  }
+
+  if (endpoint.behavior) {
     const [entityName, behaviorName] = endpoint.behavior.split('.')
     const entity = entityName ? schema.entities[entityName] : undefined
     const behavior: BehaviorSchema | undefined = entity && behaviorName ? entity.behaviors[behaviorName] : undefined
@@ -135,16 +223,18 @@ function buildHandlerBody(entry: EndpointEntry, schema: FabricSchema): string[] 
     }
   }
 
-  // Placeholder implementation
+  const returnType = resolveReturnType(endpoint)
   if (method === 'delete') {
     lines.push(`    // TODO: implement`)
     lines.push(`    res.status(204).send()`)
   } else if (method === 'get') {
+    const cast = returnType ? ` as ${returnType}` : ''
     lines.push(`    // TODO: implement`)
-    lines.push(`    res.json({})`)
+    lines.push(`    res.json({}${cast})`)
   } else {
+    const cast = returnType ? ` as ${returnType}` : ''
     lines.push(`    // TODO: implement`)
-    lines.push(`    res.status(201).json({})`)
+    lines.push(`    res.status(201).json({}${cast})`)
   }
 
   return lines
@@ -152,13 +242,41 @@ function buildHandlerBody(entry: EndpointEntry, schema: FabricSchema): string[] 
 
 // --- Route file generation ---
 
-function generateRouterFile(entries: EndpointEntry[], schema: FabricSchema): string {
+function collectEntityTypes(entries: EndpointEntry[]): Set<string> {
+  const types = new Set<string>()
+  for (const entry of entries) {
+    if (entry.endpoint.returns) types.add(entry.endpoint.returns)
+  }
+  return types
+}
+
+function collectRepositoryImports(entries: EndpointEntry[], entityNames: string[]): Set<string> {
+  const repos = new Set<string>()
+  for (const entry of entries) {
+    const entity = resolveTargetEntity(entry.endpoint, entityNames)
+    if (entity) repos.add(`${lcFirst(entity)}Repository`)
+  }
+  return repos
+}
+
+function generateRouterFile(entries: EndpointEntry[], schema: FabricSchema, orm: 'prisma' | null): string {
   const hasAuth = entries.some(e => e.endpoint.auth?.roles && e.endpoint.auth.roles.length > 0)
+  const entityTypes = collectEntityTypes(entries)
+  const entityNames = Object.keys(schema.entities)
   const lines: string[] = []
 
   lines.push(`import { Router, Request, Response } from 'express'`)
   if (hasAuth) {
     lines.push(`import { requireRoles } from '../middleware/auth'`)
+  }
+  if (orm === 'prisma') {
+    const repos = [...collectRepositoryImports(entries, entityNames)].sort()
+    if (repos.length > 0) {
+      lines.push(`import { ${repos.join(', ')} } from '../prisma/repository'`)
+    }
+  } else if (entityTypes.size > 0) {
+    const sorted = [...entityTypes].sort()
+    lines.push(`import type { ${sorted.join(', ')} } from '../typescript'`)
   }
   lines.push(``)
   lines.push(`const router = Router()`)
@@ -169,7 +287,9 @@ function generateRouterFile(entries: EndpointEntry[], schema: FabricSchema): str
     const roles = endpoint.auth?.roles ?? []
     const authArg = roles.length > 0 ? `${renderAuthMiddleware(roles)}, ` : ''
     const desc = endpoint.description ? ` // ${endpoint.description}` : ''
-    const bodyLines = buildHandlerBody(entry, schema)
+    const bodyLines = orm === 'prisma'
+      ? buildHandlerBodyPrisma(entry, schema, entityNames)
+      : buildHandlerBodyTodo(entry, schema)
     const bodyStr = bodyLines.length > 0 ? `\n${bodyLines.join('\n')}\n  ` : ''
 
     lines.push(`router.${method}('${fullPath}', ${authArg}async (req: Request, res: Response) => {${bodyStr}})${desc}`)
@@ -206,36 +326,60 @@ function generateAuthMiddleware(): string {
 
 // --- App entry point ---
 
-function generateAppFile(apiNames: string[]): string {
-  const lines: string[] = []
+function generateAppFile(): string {
+  return [
+    `import express from 'express'`,
+    `import router from './routes'`,
+    ``,
+    `const app = express()`,
+    `app.use(express.json())`,
+    `app.use('/api', router)`,
+    ``,
+    `export default app`,
+    ``,
+  ].join('\n')
+}
 
-  lines.push(`import express from 'express'`)
-  lines.push(`import router from './routes'`)
-  lines.push(``)
-  lines.push(`const app = express()`)
-  lines.push(`app.use(express.json())`)
-  lines.push(`app.use('/api', router)`)
-  lines.push(``)
-  lines.push(`export default app`)
-  lines.push(``)
+// --- Server entry point ---
 
-  return lines.join('\n')
+function generateServerFile(appName: string): string {
+  return [
+    `import app from './app'`,
+    ``,
+    `const PORT = process.env.PORT ? Number(process.env.PORT) : 3000`,
+    ``,
+    `app.listen(PORT, () => {`,
+    `  console.log(\`${appName} listening on http://localhost:\${PORT}\`)`,
+    `})`,
+    ``,
+  ].join('\n')
 }
 
 // --- Generator ---
 
+export interface ExpressGeneratorOptions {
+  orm?: 'prisma'
+}
+
 export class ExpressGenerator implements Generator {
   readonly name = 'express'
-  readonly dependsOn: string[] = ['typescript']
+  readonly dependsOn: string[]
+  private readonly orm: 'prisma' | null
+
+  constructor(options: ExpressGeneratorOptions = {}) {
+    this.orm = options.orm ?? null
+    this.dependsOn = this.orm === 'prisma' ? ['typescript', 'prisma'] : ['typescript']
+  }
 
   async generate(schema: FabricSchema, _ctx: GeneratorContext): Promise<GeneratorOutput> {
     const entries = collectEndpoints(schema)
+    const appName = schema.meta.name
 
     return {
       files: [
         {
           path: 'express/routes/index.ts',
-          content: generateRouterFile(entries, schema),
+          content: generateRouterFile(entries, schema, this.orm),
           header: '// @generated by @quoin/generator-express — do not edit\n',
         },
         {
@@ -245,7 +389,12 @@ export class ExpressGenerator implements Generator {
         },
         {
           path: 'express/app.ts',
-          content: generateAppFile(Object.keys(schema.apis)),
+          content: generateAppFile(),
+          header: '// @generated by @quoin/generator-express — do not edit\n',
+        },
+        {
+          path: 'express/server.ts',
+          content: generateServerFile(appName),
           header: '// @generated by @quoin/generator-express — do not edit\n',
         },
       ],

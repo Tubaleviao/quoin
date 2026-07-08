@@ -1,0 +1,22 @@
+{
+  "name": "@quoin/generator-prisma",
+  "version": "0.0.1",
+  "description": "Prisma schema + repository generator for quoin",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=src",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@quoin/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.4.0"
+  }
+}
