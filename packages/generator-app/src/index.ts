@@ -547,16 +547,17 @@ function generateEntityPage(entityName: string, schema: FabricSchema): string {
   lines.push(`      <hr />`)
   if (hasCreateEndpoint) {
     lines.push(`      <h3>Add ${entityName}</h3>`)
-    // Render custom selects for foreign-key fields above the generated form
+    // Render custom selects for foreign-key fields as plain labels above the generated form.
+    // LoanForm is itself a <form>, so we must NOT wrap it in another <form> (nested forms break HTML).
+    // The selects update the shared `form` state; LoanForm's own submit button drives submission.
     if (relations.length > 0) {
-      lines.push(`      <form onSubmit={e => { e.preventDefault(); handleSubmit(form) }} aria-label="${entityName} form">`)
+      lines.push(`      <div>`)
       for (const rel of relations) {
         lines.push(`        <label>`)
         lines.push(`          <span>${rel.fieldName} *</span>`)
         lines.push(`          <select`)
         lines.push(`            value={form.${rel.fieldName} ?? ''}`)
         lines.push(`            onChange={e => setForm(prev => ({ ...prev, ${rel.fieldName}: e.target.value }))}`)
-        lines.push(`            required`)
         lines.push(`          >`)
         lines.push(`            <option value="">Select ${rel.targetEntity}…</option>`)
         lines.push(`            {${lcFirst(rel.targetEntity)}Options.map((o: any) => (`)
@@ -565,18 +566,16 @@ function generateEntityPage(entityName: string, schema: FabricSchema): string {
         lines.push(`          </select>`)
         lines.push(`        </label>`)
       }
-      // Render non-relation fields via the generated form but suppress FK fields using onChange no-op
-      lines.push(`        <${entityName}Form`)
-      lines.push(`          values={form}`)
-      lines.push(`          onChange={(field, value) => {`)
+      lines.push(`      </div>`)
       const fkFields = relations.map(r => `'${r.fieldName}'`)
-      lines.push(`            if ([${fkFields.join(', ')}].includes(field as string)) return`)
-      lines.push(`            setForm(prev => ({ ...prev, [field]: value }))`)
-      lines.push(`          }}`)
-      lines.push(`          onSubmit={() => {}}`)
-      lines.push(`        />`)
-      lines.push(`        <button type="submit">Save ${entityName}</button>`)
-      lines.push(`      </form>`)
+      lines.push(`      <${entityName}Form`)
+      lines.push(`        values={form}`)
+      lines.push(`        onChange={(field, value) => {`)
+      lines.push(`          if ([${fkFields.join(', ')}].includes(field as string)) return`)
+      lines.push(`          setForm(prev => ({ ...prev, [field]: value }))`)
+      lines.push(`        }}`)
+      lines.push(`        onSubmit={handleSubmit}`)
+      lines.push(`      />`)
     } else {
       lines.push(`      <${entityName}Form`)
       lines.push(`        values={form}`)
