@@ -9,6 +9,7 @@ import type {
   ApiSchema,
   EndpointSchema,
   GdprCategory,
+  ConceptRole,
 } from './types'
 import type {
   FabricInput,
@@ -20,6 +21,8 @@ import type {
   EndpointInput,
 } from './input-types'
 import { CURRENT_IR_VERSION } from './version'
+
+const VALID_CONCEPT_ROLES: readonly ConceptRole[] = ['entity', 'material', 'item', 'creature', 'biome', 'system']
 
 function normalizeField(name: string, raw: FieldInput, context?: string): FieldSchema {
   const loc = context ? `${context}.fields.${name}` : `fields.${name}`
@@ -123,9 +126,14 @@ function normalizeEntity(name: string, raw: EntityInput): EntitySchema {
     behaviors[bName] = normalizeBehavior(bName, rawB, name)
   }
 
+  const role = raw.role ?? 'entity'
+  if (!VALID_CONCEPT_ROLES.includes(role)) {
+    throw new Error(`entities.${name}: invalid role "${role}". Must be one of: ${VALID_CONCEPT_ROLES.join(', ')}`)
+  }
+
   return {
     name,
-    role: raw.role ?? 'entity',
+    role,
     description: raw.description ?? '',
     goal: raw.goal,
     fields,
