@@ -1,4 +1,6 @@
-import type { FabricSchema, EntitySchema, StateMachineSchema } from './types'
+import type { FabricSchema, EntitySchema, StateMachineSchema, ConceptRole } from './types'
+
+const VALID_CONCEPT_ROLES: readonly ConceptRole[] = ['entity', 'material', 'item', 'creature', 'biome', 'system']
 
 export interface ValidationError {
   path: string
@@ -85,6 +87,10 @@ function validateEntity(
 ): { errors: ValidationError[], warnings: ValidationWarning[] } {
   const errors: ValidationError[] = []
   const warnings: ValidationWarning[] = []
+
+  if (!VALID_CONCEPT_ROLES.includes(entity.role)) {
+    errors.push(err(`entities.${name}.role`, `invalid role "${entity.role}". Must be one of: ${VALID_CONCEPT_ROLES.join(', ')}`))
+  }
 
   for (const [bName, behavior] of Object.entries(entity.behaviors)) {
     if (behavior.auth?.ownerField && !(behavior.auth.ownerField in entity.fields)) {

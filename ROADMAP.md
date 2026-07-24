@@ -25,28 +25,45 @@ Phases 1–10 are complete. This document tracks what comes next.
 
 ## Phase 11 — IR extensions for non-application domains
 
-These are targeted, non-breaking additions to `@newel/core` required before
-game or simulation generators can produce useful output. No existing generators
-are affected.
+These are targeted additions to `@newel/core` required before game or simulation
+generators can produce useful output. Phase 11a is a breaking IR change (role
+replaces kind; IR version bumped to 2.0.0). Phases 11b and 11c are additive.
 
-### 11a — Entity `kind` discriminator
+### 11a — Entity `role` discriminator ✅ Done
 
-Add an optional `kind` field to `EntitySchema` (and `EntityInput`):
+Add a required `role: ConceptRole` field to `EntitySchema`. `ConceptRole` is a
+closed union type — not a free string — so generators can exhaustively switch on
+it and unknown values are type errors:
 
 ```ts
-kind?: string   // e.g. 'entity' | 'material' | 'item' | 'creature' | 'biome'
+export type ConceptRole =
+  | 'entity'
+  | 'material'
+  | 'item'
+  | 'creature'
+  | 'biome'
+  | 'system'
+
+// EntitySchema gains:
+role: ConceptRole
 ```
 
-Generators use `kind` to route output (e.g. a game generator skips DB tables
-for `kind: 'material'`; a bible generator groups entries by kind). The
-normaliser defaults to `'entity'` when absent, so all existing fabrics are
-unaffected.
+`role` is optional in `EntityInput` (the user-facing layer); the normaliser
+defaults to `'entity'` when omitted, so all existing fabrics are unaffected.
+
+`kind` was considered and rejected: it is already used on `RelationSchema` for
+`'hasMany' | 'hasOne' | ...`, and a plain `string` type gives generators nothing
+reliable to branch on. `role` is a closed enum and required in the IR.
+
+**Breaking change:** IR version bumped `1.0.0 → 2.0.0`.
 
 **Acceptance criteria:**
-- `EntitySchema` has `kind?: string`
-- Normaliser sets `kind = 'entity'` when omitted
-- Existing tests still pass
-- `generator-typescript`, `generator-sql`, `generator-docs` ignore `kind` (no
+- `ConceptRole` type is exported from `@newel/core`
+- `EntitySchema` has `role: ConceptRole` (required)
+- `EntityInput` has `role?: ConceptRole` (optional, defaults to `'entity'`)
+- Normaliser sets `role = 'entity'` when omitted
+- Existing tests still pass; two new tests cover default and explicit role
+- `generator-typescript`, `generator-sql`, `generator-docs` ignore `role` (no
   change to their output)
 
 ### 11b — Weighted spawn relations

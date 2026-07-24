@@ -59,10 +59,26 @@ describe('normalizeSchema', () => {
 
   it('produces a valid schema from minimal input', () => {
     const schema = normalizeSchema({ meta: { name: 'Test' } })
-    expect(schema.version).toBe('1.0.0')
+    expect(schema.version).toBe('2.0.0')
     expect(schema.meta.name).toBe('Test')
     expect(schema.entities).toEqual({})
     expect(schema.apis).toEqual({})
+  })
+
+  it('defaults entity role to "entity" when omitted', () => {
+    const schema = normalizeSchema({
+      meta: { name: 'Test' },
+      entities: { Book: { fields: { id: { type: 'uuid', primaryKey: true } } } },
+    })
+    expect(schema.entities['Book'].role).toBe('entity')
+  })
+
+  it('preserves an explicit role on an entity', () => {
+    const schema = normalizeSchema({
+      meta: { name: 'Test' },
+      entities: { Wolf: { role: 'creature', fields: { id: { type: 'uuid', primaryKey: true } } } },
+    })
+    expect(schema.entities['Wolf'].role).toBe('creature')
   })
 
   it('normalises field defaults', () => {

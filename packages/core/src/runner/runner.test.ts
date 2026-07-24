@@ -7,7 +7,7 @@ import type { FabricSchema } from '../ir/types'
 import { SNAPSHOT_FILE } from './snapshot'
 
 const minimalSchema: FabricSchema = {
-  version: '1.0.0',
+  version: '2.0.0',
   meta: { name: 'test' },
   entities: {},
   apis: {},
@@ -129,6 +129,7 @@ describe('runGenerators', () => {
       entities: {
         Book: {
           name: 'Book',
+          role: 'entity',
           description: 'original',
           fields: {},
           relations: {},

@@ -1,6 +1,6 @@
 {
   "name": "@newel/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Core IR types, builder DSL, generator runner, and CLI for newel",
   "keywords": ["newel", "codegen", "schema", "typescript", "dsl", "cli", "generator"],
   "homepage": "https://github.com/Tubaleviao/newel#readme",

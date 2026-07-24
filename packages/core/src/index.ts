@@ -27,6 +27,7 @@ export type {
 } from './ir/input-types'
 
 export type {
+  ConceptRole,
   FabricSchema,
   EntitySchema,
   FieldSchema,

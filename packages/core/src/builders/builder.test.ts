@@ -4,7 +4,7 @@ import type { FabricSchema } from '../ir/types'
 describe('FabricBuilder', () => {
   it('produces valid IR with empty schema', () => {
     const ir = fabric().toIR()
-    expect(ir.version).toBe('1.0.0')
+    expect(ir.version).toBe('2.0.0')
     expect(ir.entities).toEqual({})
     expect(ir.apis).toEqual({})
   })

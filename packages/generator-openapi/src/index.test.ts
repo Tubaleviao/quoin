@@ -7,18 +7,19 @@ const makeCtx = (): GeneratorContext => ({
 })
 
 const minimalSchema: FabricSchema = {
-  version: '1.0.0',
+  version: '2.0.0',
   meta: { name: 'TestApp', version: '2.0.0' },
   entities: {},
   apis: {},
 }
 
 const richSchema: FabricSchema = {
-  version: '1.0.0',
+  version: '2.0.0',
   meta: { name: 'LibraryApp', description: 'Library management', version: '1.0.0' },
   entities: {
     Book: {
       name: 'Book',
+      role: 'entity',
       description: 'A book in the catalogue',
       fields: {
         id:     { name: 'id',     type: 'uuid',    nullable: false, primaryKey: true,  pii: false },
@@ -285,6 +286,7 @@ describe('OpenApiGenerator', () => {
         entities: {
           Tag: {
             name: 'Tag',
+            role: 'entity',
             description: 'A tag',
             fields: { id: { name: 'id', type: 'uuid', nullable: false, primaryKey: true, pii: false } },
             relations: {},

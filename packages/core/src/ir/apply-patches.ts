@@ -1,5 +1,7 @@
-import type { FabricSchema } from './types'
+import type { FabricSchema, ConceptRole } from './types'
 import type { Patch, MergePatch, SuppressPatch } from './patch'
+
+const VALID_CONCEPT_ROLES: readonly ConceptRole[] = ['entity', 'material', 'item', 'creature', 'biome', 'system']
 
 /**
  * Returns a deep-cloned FabricSchema with all merge patches applied.
@@ -82,6 +84,11 @@ function applyEntityMerge(schema: FabricSchema, segments: string[], patch: Merge
 
   let patchedEntity = entity
   if (rest.length === 0) {
+    if ('role' in patch.value && !VALID_CONCEPT_ROLES.includes(patch.value.role as ConceptRole)) {
+      throw new Error(
+        `patch target "${patch.target}": invalid role "${patch.value.role}". Must be one of: ${VALID_CONCEPT_ROLES.join(', ')}`
+      )
+    }
     patchedEntity = { ...entity, ...patch.value } as typeof entity
   } else if (rest[0] === 'fields') {
     patchedEntity = applyFieldMerge(entity, rest, patch)

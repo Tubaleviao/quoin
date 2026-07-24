@@ -3,11 +3,12 @@ import type { FabricSchema } from './types'
 import type { Patch } from './patch'
 
 const baseSchema: FabricSchema = {
-  version: '1.0.0',
+  version: '2.0.0',
   meta: { name: 'TestApp', version: '1.0.0' },
   entities: {
     Book: {
       name: 'Book',
+      role: 'entity',
       description: 'A book',
       fields: {
         id: { name: 'id', type: 'uuid', nullable: false, primaryKey: true, pii: false },
