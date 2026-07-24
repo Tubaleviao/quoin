@@ -248,7 +248,7 @@ export const userSchema = z.object({
 | Package | Output | Depends on |
 |---------|--------|------------|
 | `@newel/generator-typescript` | TS interfaces + Zod schemas | — |
-| `@newel/generator-openapi` | OpenAPI 3.x YAML | `typescript` |
+| `@newel/generator-openapi` | OpenAPI 3.x YAML with auto-transition endpoints | `typescript` |
 | `@newel/generator-sql` | Safe incremental SQL migrations via IR diff | `typescript` |
 | `@newel/generator-docs` | Markdown docs + GDPR data map | `openapi`, `typescript` |
 | `@newel/generator-jsonschema` | JSON Schema draft-07 per entity | — |
@@ -258,6 +258,42 @@ export const userSchema = z.object({
 | `@newel/generator-prisma` | Prisma schema + typed repositories | `typescript` |
 | `@newel/generator-express` | Express router + typed handlers | `typescript` (or `prisma`) |
 | `@newel/generator-app` | Full-stack scaffold (Express + Vite React) | `express`, `prisma`, `ui` |
+
+---
+
+## Entity roles (`ConceptRole`)
+
+Every entity carries a `role` field that discriminates application entities from domain-specific concepts such as items in a game or simulation. The default is `'entity'`, so existing fabrics are unaffected.
+
+```typescript
+export default defineEntity({
+  role: 'creature',   // 'entity' | 'material' | 'item' | 'creature' | 'biome' | 'system'
+  description: 'A living creature in the world',
+  fields: { ... },
+})
+```
+
+Generators can use `role` to vary their output — for example, `generator-sql` can omit tables for `'system'` concepts that have no persisted state.
+
+---
+
+## Examples
+
+Two worked examples are included in the repo under `examples/`:
+
+| Example | Description |
+|---------|-------------|
+| `examples/library/` | Full-stack library management system — uses all generators including `ui`, `prisma`, `express`, and `app` |
+| `examples/rest-api/` | Order management REST API — uses `typescript`, `openapi`, `sql`, `docs`, `jsonschema`, `rdf`, `owl` |
+
+To run an example after building the monorepo:
+
+```bash
+cd examples/library   # or examples/rest-api
+pnpm install
+pnpm validate         # validate the fabric — no files written
+pnpm generate         # generate all artifacts
+```
 
 ---
 
